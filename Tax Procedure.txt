@@ -1,0 +1,68 @@
+SET SERVEROUTPUT ON
+DECLARE
+	ID_in Employee.Empid%TYPE;
+	ID Employee.Empid%TYPE;
+	Name Employee.Ename%TYPE;
+	Sal Employee.Salary%TYPE;
+	Tax NUMBER(8,2);
+	tax_bracket_exception EXCEPTION;
+BEGIN
+	ID_in := &NUMBER;
+	DBMS_OUTPUT.PUT_LINE(CHR(10) || CHR(13));
+
+	Select Empid, Ename, Salary INTO ID, Name, Sal FROM Employee WHERE Empid = ID_in;
+
+	--2014 income tax brackets for filing single
+	IF Sal <= 9075 THEN
+		Tax := Sal * .1;
+	ELSIF Sal > 9075 AND Sal <= 36900 THEN
+		Tax := 907.5 + (Sal - 9075) * .15;
+	ELSIF Sal > 36900 AND Sal <= 89350 THEN
+		Tax := 5081.25 + (Sal - 36900) * .25;
+	ELSIF Sal > 89350 AND Sal <= 186350 THEN
+		Tax := 18193.75 + (Sal - 89350) * .28;
+	ELSIF Sal > 186350 AND Sal <= 405100 THEN
+		Tax := 45353.75 + (Sal - 186350) * .33;
+	ELSIF Sal > 405100 AND Sal <= 406750 THEN
+		Tax := 117541.25 + (Sal - 405100) * .35;
+	ELSIF Sal > 406750 THEN
+		Tax := 118118.75 + (Sal - 406750) * .396;
+	ELSE
+		RAISE tax_bracket_exception;
+	END IF;
+	
+	DBMS_OUTPUT.PUT_LINE('ID: ' || ID || CHR(9) || 'Name: ' || Name || CHR(9)
+		|| 'Tax: $' || Tax);
+
+EXCEPTION
+	WHEN NO_DATA_FOUND THEN
+		DBMS_OUTPUT.PUT_LINE('The Employee ID ''' || ID_in || ''' does not exist!');
+	WHEN tax_bracket_exception THEN
+		DBMS_OUTPUT.PUT_LINE('A tax bracket could not be found for the salary figure of: '
+			|| Sal || '. Please contact somebody in IT for assistance.');
+	WHEN OTHERS THEN
+		DBMS_OUTPUT.PUT_LINE(SQLERRM);
+END;
+/
+
+Run 1, Good input: 
+
+	Enter value for number: 1
+	old   9:        ID_in := &NUMBER;
+	new   9:        ID_in := 1;
+
+
+	ID: 1   Name: Bob       Tax: $80108.36
+
+	PL/SQL procedure successfully completed.
+
+Run 2, Bad input:
+
+	Enter value for number: 25
+	old   9:        ID_in := &NUMBER;
+	new   9:        ID_in := 25;
+
+
+	The Employee ID '25' does not exist!
+
+	PL/SQL procedure successfully completed.

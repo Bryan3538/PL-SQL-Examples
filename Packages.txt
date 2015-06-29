@@ -1,0 +1,92 @@
+CREATE OR REPLACE PACKAGE Employee_Incentives AS
+	PROCEDURE raise_department_salary(in_deptno IN NUMBER, raise_amount NUMBER := 1);
+	PROCEDURE raise_department_salary(in_deptname IN VARCHAR2, raise_amount NUMBER := 1);
+END Employee_Incentives;
+/
+
+CREATE OR REPLACE PACKAGE BODY Employee_Incentives AS
+	
+	PROCEDURE raise_department_salary(in_deptno IN NUMBER, raise_amount NUMBER := 1) IS
+		counter NUMBER := 0;
+		new_salary Employee.Salary%TYPE;
+		CURSOR emps IS 
+			SELECT Empid, Salary FROM Employee WHERE deptno = in_deptno;
+	BEGIN
+		FOR emp IN emps LOOP
+			UPDATE Employee SET Salary = emp.Salary + raise_amount WHERE Empid = emp.Empid;
+			SELECT Salary INTO new_salary FROM Employee WHERE Empid = emp.Empid;
+			DBMS_OUTPUT.PUT_LINE('Raised the salary of employee: ' || emp.Empid || ' from ' 
+				|| emp.salary || ' to ' || new_salary || '.');
+			counter := counter + 1;
+		END LOOP;
+		
+		IF counter > 0 THEN
+			DBMS_OUTPUT.PUT_LINE('---------------------------------------------');
+			DBMS_OUTPUT.PUT_LINE('Updated the salaries of ' || counter || ' employees.');
+		ELSE
+			DBMS_OUTPUT.PUT_LINE('The department ''' || in_deptno || ''' does not exist or contains no employees');
+		END IF;
+	END; --end procedure
+
+	PROCEDURE raise_department_salary(in_deptname VARCHAR2, raise_amount NUMBER := 1) IS
+		counter NUMBER := 0;
+		new_salary Employee.Salary%TYPE;
+		CURSOR emps IS 
+			SELECT Empid, Salary FROM Employee WHERE deptno = 
+				(SELECT deptno FROM Department WHERE deptname = in_deptname);
+	BEGIN
+		FOR emp IN emps LOOP
+			UPDATE Employee SET Salary = emp.Salary + raise_amount WHERE Empid = emp.Empid;
+			SELECT Salary INTO new_salary FROM Employee WHERE Empid = emp.Empid;
+			DBMS_OUTPUT.PUT_LINE('Raised the salary of employee: ' || emp.Empid || ' from ' 
+				|| emp.salary || ' to ' || new_salary || '.');
+			counter := counter + 1;
+		END LOOP;
+		
+		IF counter > 0 THEN
+			DBMS_OUTPUT.PUT_LINE('---------------------------------------------');
+			DBMS_OUTPUT.PUT_LINE('Updated the salaries of ' || counter || ' employees.');
+		ELSE
+			DBMS_OUTPUT.PUT_LINE('The department ''' || in_deptname || ''' does not exist or contains no employees');
+		END IF;
+	END; --end procedure
+	
+END Employee_Incentives;
+/
+
+===================================OUTPUT===================================
+
+SQL> EXECUTE employee_incentives.raise_department_salary(10);
+Raised the salary of employee: 2500 from 29377 to 29378.
+Raised the salary of employee: 2501 from 30210 to 30211.
+---------------------------------------------
+Updated the salaries of 2 employees.
+
+PL/SQL procedure successfully completed.
+===========================================================================
+
+SQL> EXECUTE employee_incentives.raise_department_salary(10, 100);
+Raised the salary of employee: 2500 from 29378 to 29478.
+Raised the salary of employee: 2501 from 30211 to 30311.
+---------------------------------------------
+Updated the salaries of 2 employees.
+
+PL/SQL procedure successfully completed.
+===========================================================================
+
+SQL> EXECUTE employee_incentives.raise_department_salary('Sales');
+Raised the salary of employee: 2500 from 29478 to 29479.
+Raised the salary of employee: 2501 from 30311 to 30312.
+---------------------------------------------
+Updated the salaries of 2 employees.
+
+PL/SQL procedure successfully completed.
+===========================================================================
+
+SQL> EXECUTE employee_incentives.raise_department_salary('Sales', 100);
+Raised the salary of employee: 2500 from 29479 to 29579.
+Raised the salary of employee: 2501 from 30312 to 30412.
+---------------------------------------------
+Updated the salaries of 2 employees.
+
+PL/SQL procedure successfully completed.

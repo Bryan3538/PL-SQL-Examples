@@ -1,0 +1,52 @@
+	DECLARE
+		AverageSalary Employee.Salary%TYPE;
+		Dept Department.Deptno%TYPE;
+		DepartmentName Department.Deptname%TYPE;
+		Ctr NUMBER := 0;
+
+
+		CURSOR underpaidEmployees(Dept NUMBER) IS
+			SELECT Empid, Ename, Salary FROM Employee WHERE Deptno = Dept AND
+				Salary < (SELECT AVG(Salary) FROM Employee WHERE Deptno = Dept)
+			FOR UPDATE OF Salary NOWAIT;
+
+	BEGIN
+		Dept := &Dept;
+		SELECT Deptname INTO DepartmentName FROM Department WHERE Deptno = Dept;
+		SELECT AVG(Salary) INTO AverageSalary FROM Employee WHERE Deptno = Dept;
+		DBMS_OUTPUT.PUT_LINE('You have chosen department ''' || DepartmentName 
+			|| ','' which has an average salary of $' || AverageSalary|| '.' 
+			|| CHR(10) || CHR(13));
+
+		FOR empRec IN underpaidEmployees(Dept) LOOP
+			DBMS_OUTPUT.PUT_LINE('The Employee ' || empRec.Ename ||' (Number: ' || empRec.Empid
+				|| ') has a salary of $' || empRec.Salary || ' which is below the department average of $' 
+				|| AverageSalary || '.');
+			UPDATE Employee SET Salary = AverageSalary WHERE Empid = empRec.Empid;
+			DBMS_OUTPUT.PUT_LINE('The Employee ' || empRec.Ename ||' (Number: ' || empRec.Empid
+				|| ') has been updated to a salary of $' || AverageSalary || ' to meet the department average.'
+				|| CHR(10) || CHR(13));
+			Ctr := Ctr + 1;
+		END LOOP;
+
+		IF Ctr > 0 THEN
+			DBMS_OUTPUT.PUT_LINE('Successfully updated the salary of ' || Ctr || ' employees in the '
+				|| DepartmentName || ' department.');
+		ELSE
+			DBMS_OUTPUT.PUT_LINE('No employees had a salary below average in the department of: '
+				|| DepartmentName);
+		END IF;
+	END;
+	/
+
+	Enter value for dept: 40
+	old  14:        Dept := &Dept;
+	new  14:        Dept := 40;
+	You have chosen department 'Information Technology,' which has an average salary of $66667.
+
+	The Employee Brad (Number: 7000) has a salary of $58334 which is below the department average of $66667.
+	The Employee Brad (Number: 7000) has been updated to a salary of $66667 to meet the department average.
+
+	Successfully updated the salary of 1 employees in the Information Technology department.
+
+	PL/SQL procedure successfully completed.

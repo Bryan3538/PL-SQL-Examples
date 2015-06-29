@@ -1,0 +1,31 @@
+CREATE OR REPLACE TRIGGER Monday_insert_delete_restrict
+	BEFORE INSERT OR DELETE
+	ON Employee
+
+	DECLARE
+		Day_Of_The_Week_Exception EXCEPTION;
+	BEGIN
+		IF (TO_CHAR(Sysdate, 'DY')) = 'MON' THEN
+			RAISE Day_Of_The_Week_Exception;
+		END IF;
+
+	EXCEPTION
+		WHEN Day_Of_The_Week_Exception THEN
+			Raise_application_error(-20100, 'You cannot insert or delete employees on Mondays');
+		WHEN OTHERS THEN
+			DBMS_OUTPUT.PUT_LINE(SQLCODE || CHR(9) || SQLERRM);
+END;
+/
+
+
+--------OUTPUT--------
+
+		SQL> DELETE FROM Employee WHERE Empid = 9995
+		            *
+		ERROR at line 1:
+		ORA-20100: You cannot insert or delete employees on Mondays
+		ORA-06512: at "HR.MONDAY_INSERT_DELETE_RESTRICT", line 10
+		ORA-04088: error during execution of trigger 'HR.MONDAY_INSERT_DELETE_RESTRICT'
+
+		INSERT INTO Employee(Empid, Ename) VALUES (9995, 'Somebody');
+		DELETE FROM Employee WHERE Empid = 9995;
